@@ -34,10 +34,12 @@ void process_file(char *file_name) {
     char *line = NULL;
     size_t size = 0;
     while (getline(&line, &size, fp) != -1) {
-        char *token, *dummy = line;
-        while ((token = strsep(&dummy, " \0\t\n\r")) != NULL) {
+        char *dummy = line;
+        char *token = strtok(dummy, " \t\n\r");
+        while (token != NULL) {
             insert_word_pair(token);
             word_count_per_process++;
+            token = strtok(NULL, " \t\n\r");
         }
     }
     free(line);
