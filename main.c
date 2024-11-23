@@ -1,8 +1,8 @@
+#include <assert.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <mpi.h>
 
 typedef struct pair {
     char *key;
@@ -65,12 +65,12 @@ void count(char *key) {
 int main(int argc, char *argv[]) {
 
     MPI_Init(&argc, &argv);
-//    printf("argc %d\n", argc);
+    //    printf("argc %d\n", argc);
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-//    pairs = malloc(sizeof(pair *));
+    //    pairs = malloc(sizeof(pair *));
     pairs = malloc(sizeof(pair));
     pairs->key = NULL;
     pairs->next = NULL;
@@ -81,30 +81,30 @@ int main(int argc, char *argv[]) {
     int num_files = argc - 1;
 
     for (int i = 0; i < num_files; ++i) {
-            int process_id = i % size;
-            if (process_id == rank) {
-                process_file(argv[i + 1]);
-            }
+        int process_id = i % size;
+        if (process_id == rank) {
+            process_file(argv[i + 1]);
         }
-        char ** local_words = malloc(sizeof(char *) * word_count_per_process);
-        int i = 0;
-        pair *p = pairs;
-        while (p != NULL && p->key != NULL) {
-            local_words[i] = malloc(strlen(p->key) + 1);
-            strcpy(local_words[i], p->key);
-//            printf("%s\n", pairs->key);
-            p = p->next;
-            i++;
-        }
+    }
+    char **local_words = malloc(sizeof(char *) * word_count_per_process);
+    int i = 0;
+    pair *p = pairs;
+    while (p != NULL && p->key != NULL) {
+        local_words[i] = malloc(strlen(p->key) + 1);
+        strcpy(local_words[i], p->key);
+        //            printf("%s\n", pairs->key);
+        p = p->next;
+        i++;
+    }
 
-//        printf("word count %d\n", word_count_per_process);
-        p = pairs;
-        while (p != NULL) {
-            if (p->key != NULL) {
-                count(p->key);
-            }
-            p = p->next;
+    //        printf("word count %d\n", word_count_per_process);
+    p = pairs;
+    while (p != NULL) {
+        if (p->key != NULL) {
+            count(p->key);
         }
+        p = p->next;
+    }
 
 
     /// TODO gather the results in process 0
