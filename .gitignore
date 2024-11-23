@@ -1,4 +1,7 @@
-CMakeLists.txt
 build/
 *.o
 main
+cmake_install.cmake
+cmake-build-debug
+CMakeCache.txt
+.idea/*
