@@ -113,6 +113,14 @@ int main(int argc, char *argv[]) {
         /// array of words malloc
     }
 
+    //// free the allocated memory
+    while (pairs != NULL) {
+        pair *temp = pairs;
+        pairs = pairs->next;
+        free(temp->key);
+        free(temp);
+    }
+
     MPI_Finalize();
     return 0;
 }
