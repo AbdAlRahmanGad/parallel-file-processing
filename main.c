@@ -84,8 +84,9 @@ int main(int argc, char *argv[]) {
         while (operation_number != 0) {
             printf("\nEnter 0 to exit, 1 to count number of words in each file separately, 2 to count the number of word in one specific file "
                    ", 3 to count the number of words in all files, 4 get number of words in one specific file \n"
-                   "5, scatter the files randomly, 6, print summary and GENERATE a file\n");
+                   "5, scatter the files randomly, 6, print summary and GENERATE a file\n\n");
             scanf("%d", &operation_number);
+            printf("\n");
             if (operation_number == 1) {
               MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
             } else if (operation_number == 2 || operation_number == 4) {
