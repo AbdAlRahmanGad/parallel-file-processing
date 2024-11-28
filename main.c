@@ -80,11 +80,10 @@ int main(int argc, char *argv[]) {
     if(rank == 0){
         int operation_number = 1;
         int file_to_process = -1;
-//        int random_scatter = 0;
         while (operation_number != 0) {
-            printf("\nEnter 0 to exit, 1 to count number of words in each file separately, 2 to count the number of word in one specific file "
-                   ", 3 to count the number of words in all files, 4 get number of words in one specific file \n"
-                   "5, scatter the files randomly, 6, print summary and GENERATE a file\n\n");
+            printf("\nEnter 0 to exit\n1, to count number of words in each file separately\n2, to count the number of word in one specific file\n"
+                   "3, to count the number of words in all files\n4, get number of words in one specific file\n"
+                   "5, print summary and GENERATE a file\n\n");
             scanf("%d", &operation_number);
             printf("\n");
             if (operation_number == 1) {
@@ -103,23 +102,7 @@ int main(int argc, char *argv[]) {
                 int global_word_count_per_process = 0;
                 MPI_Reduce(&word_count_per_process, &global_word_count_per_process, 1, MPI_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
                 printf("Total number of words in all files is %d\n", global_word_count_per_process);
-            } else if (operation_number == 5) {
-                MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                // scatter the files
-                int *file_names = (int *)malloc(num_files * sizeof(int *));
-
-                for (int i = 0; i < num_files; ++i) {
-                    int process_id = i % size;
-                    if (process_id == rank || (process_id == 0 && rank == 1)) {
-                       file_names[i] = i + 1;
-                       break;
-                    }
-                }
-
-                int file_name;
-                MPI_Scatter(file_names, 1, MPI_INT, &file_name, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                free(file_names);
-            } else if (operation_number == 6){
+            } else if (operation_number == 5){
                 MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
             } else if (operation_number == 0) {
                 MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -154,7 +137,12 @@ int main(int argc, char *argv[]) {
         pairs->key = NULL;
         pairs->next = NULL;
 
-        if (operation_number == 1 || operation_number == 3 || operation_number == 6) {
+        if (operation_number == 1 || operation_number == 3 || operation_number == 5) {
+            // 10 file
+            // 3 process
+            // 0
+            // 1 -> 0, 1, 3, 4, 7, 9
+            // 2 -> 2, 5, 8
             for (int i = 0; i < num_files; ++i) {
                 int process_id = i % size;
                 if (process_id == rank || (process_id == 0 && rank == 1)) {
@@ -179,13 +167,8 @@ int main(int argc, char *argv[]) {
             word_count_per_process = 0;
             continue;
         }
-        if (operation_number == 5) {
-            int file_name;
-            MPI_Scatter(NULL, 0, MPI_INT, &file_name, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            process_file(argv[file_name]);
-        }
         pair *p;
-        if (operation_number != 6) {
+        if (operation_number != 5) {
             p = pairs;
             while (p != NULL) {
                 if (p->key != NULL) {
@@ -195,7 +178,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (operation_number == 6) {
+        if (operation_number == 5) {
             char *local_words = malloc(100 * word_count_per_process * sizeof(char));
             int i = 0;
             p = pairs;
@@ -216,30 +199,19 @@ int main(int argc, char *argv[]) {
                 p = p->next;
                 i++;
             }
-            puts(local_words);
+            if (word_count_per_process > 0) {
+                puts(local_words);
 
-
-            int temp_file_name = 3137 + rank;
-            char *temp_file_name_str = malloc(10 * sizeof(char));
-            sprintf(temp_file_name_str, "%d", temp_file_name);
-
-            FILE *file = fopen(temp_file_name_str, "w");
-            fprintf(file, "%s\n", local_words);
-            fclose(file);
+                int temp_file_name = 3137 + rank;
+                char *temp_file_name_str = malloc(10 * sizeof(char));
+                sprintf(temp_file_name_str, "%d", temp_file_name);
+                strcat(temp_file_name_str, ".txt");
+                FILE *file = fopen(temp_file_name_str, "w");
+                fprintf(file, "%s\n", local_words);
+                fclose(file);
+            }
         }
 
-//            if (operation_number == 5) {
-//            // write the result into a file
-//            int temp_file_name = 3137 + rank;
-//            char *temp_file_name_str = malloc(10 * sizeof(char));
-//            sprintf(temp_file_name_str, "%d", temp_file_name);
-//
-//            FILE *file = fopen(temp_file_name_str, "w");
-//            fprintf(file, "%s\n", local_words);
-//            fclose(file);
-//
-//            MPI_Gather(&temp_file_name, 1, MPI_INT, NULL, 0, MPI_INT, 0, MPI_COMM_WORLD);
-//        }
         //// free the allocated memory
         while (pairs != NULL) {
             pair *temp = pairs;
