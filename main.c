@@ -69,57 +69,51 @@ void count_and_print(char *key) {
     printf("%s %d\n", key, count);
 }
 
-int main(int argc, char *argv[]) {
-
-    MPI_Init(&argc, &argv);
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    int num_files = argc - 1;
-
-    if(rank == 0){
-        int operation_number = 1;
-        int file_to_process = -1;
-        while (operation_number != 0) {
-            printf("\nEnter 0 to exit\n1, to count number of words in each file separately\n2, to count the number of word in one specific file\n"
-                   "3, to count the number of words in all files\n4, get number of words in one specific file\n"
-                   "5, print summary and GENERATE a file\n\n");
-            scanf("%d", &operation_number);
-            printf("\n");
-            if (operation_number == 1) {
-              MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            } else if (operation_number == 2 || operation_number == 4) {
-                printf("\nEnter the file number to process\n");
-                scanf("%d", &file_to_process);
-                if (file_to_process < 1 || file_to_process > num_files) {
-                    printf("Invalid file number\n");
-                    continue;
-                }
-                MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                MPI_Bcast(&file_to_process, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            } else if (operation_number == 3) {
-                MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                int global_word_count_per_process = 0;
-                MPI_Reduce(&word_count_per_process, &global_word_count_per_process, 1, MPI_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
-                printf("Total number of words in all files is %d\n", global_word_count_per_process);
-            } else if (operation_number == 5){
-                MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            } else if (operation_number == 0) {
-                MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                break;
-            } else {
-                printf("Invalid operation number\n");
+void rootProcessOperations(int num_files) {
+    int operation_number = 1;
+    int file_to_process = -1;
+    while (operation_number != 0) {
+        printf("\nEnter 0 to exit\n1, to count number of words in each file separately\n2, to count the number of word in one specific file\n"
+               "3, to count the number of words in all files\n4, get number of words in one specific file\n"
+               "5, print summary and GENERATE a file\n\n");
+        scanf("%d", &operation_number);
+        printf("\n");
+        if (operation_number == 1) {
+          MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        } else if (operation_number == 2 || operation_number == 4) {
+            printf("\nEnter the file number to process\n");
+            scanf("%d", &file_to_process);
+            if (file_to_process < 1 || file_to_process > num_files) {
+                printf("Invalid file number\n");
                 continue;
             }
+            MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(&file_to_process, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        } else if (operation_number == 3) {
+            MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            int global_word_count_per_process = 0;
+            MPI_Reduce(&word_count_per_process, &global_word_count_per_process, 1, MPI_INT,  MPI_SUM, 0, MPI_COMM_WORLD);
+            printf("Total number of words in all files is %d\n", global_word_count_per_process);
+        } else if (operation_number == 5){
+            MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        } else if (operation_number == 0) {
+            MPI_Bcast(&operation_number, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            break;
+        } else {
+            printf("Invalid operation number\n");
+            continue;
+        }
 
-            if (operation_number > 0 && operation_number < 7) {
-                MPI_Barrier(MPI_COMM_WORLD);
-            }
+        if (operation_number > 0 && operation_number < 7) {
+            MPI_Barrier(MPI_COMM_WORLD);
         }
     }
+}
+
+void processOpearations(char *const *argv, int rank, int size, int num_files) {
     int operation_number = -1;
     int file_to_process = -1;
-    while (operation_number != 0 && rank != 0) {
+    while (operation_number != 0) {
         if (operation_number != -1) {
             MPI_Barrier(MPI_COMM_WORLD);
         }
@@ -221,6 +215,22 @@ int main(int argc, char *argv[]) {
         }
 
         word_count_per_process = 0;
+    }
+}
+int main(int argc, char *argv[]) {
+
+    MPI_Init(&argc, &argv);
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    int num_files = argc - 1;
+
+    if(rank == 0){
+        rootProcessOperations(num_files);
+    }
+
+    if (rank != 0) {
+        processOpearations(argv, rank, size, num_files);
     }
 
     MPI_Finalize();
